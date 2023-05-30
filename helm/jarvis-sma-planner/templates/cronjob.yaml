@@ -47,17 +47,17 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   key: modbus-host-ip
-                  name: {{ include "jarvis-modbus-exporter.fullname" . }}
+                  name: {{ include "jarvis-sma-planner.fullname" . }}
             - name: MODBUS_HOST_PORT
               valueFrom:
                 configMapKeyRef:
                   key: modbus-host-port
-                  name: {{ include "jarvis-modbus-exporter.fullname" . }}
+                  name: {{ include "jarvis-sma-planner.fullname" . }}
             - name: MODBUS_UNIT_ID
               valueFrom:
                 configMapKeyRef:
                   key: modbus-unit-id
-                  name: {{ include "jarvis-modbus-exporter.fullname" . }}
+                  name: {{ include "jarvis-sma-planner.fullname" . }}
             - name: STATE_FILE_CONFIG_MAP_NAME
               value: {{ include "jarvis-sma-planner.fullname" . }}
             resources:
