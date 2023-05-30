@@ -11,9 +11,10 @@ cronjob:
 
 config:
   spotPriceStateConfigMap: jarvis-spot-price-exporter
-  websocketHostIP: 127.0.0.1
-  websocketHostPort: 8214
-  websocketLoginCode: 999999
+
+  modbusHostIP: 127.0.0.1
+  modbusHostPort: 502
+  modbusUnitID: 3
 
 logLevel: info
 

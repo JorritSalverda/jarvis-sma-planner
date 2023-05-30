@@ -5,6 +5,6 @@ metadata:
   labels:
     {{- include "jarvis-sma-planner.labels" . | nindent 4 }}
 data:
-  websocket-host-ip: {{ .Values.config.websocketHostIP | quote }}
-  websocket-host-port: {{ .Values.config.websocketHostPort | quote }}
-  websocket-login-code: {{ .Values.config.websocketLoginCode | quote }}
+  modbus-host-ip: {{ .Values.config.modbusHostIP | quote }}
+  modbus-host-port: {{ .Values.config.modbusHostPort | quote }}
+  modbus-unit-id: {{ .Values.config.modbusUnitID | quote }}

@@ -43,21 +43,21 @@ spec:
             env:
             - name: RUST_LOG
               value: {{ .Values.logLevel }}
-            - name: WEBSOCKET_HOST_IP
+            - name: MODBUS_HOST_IP
               valueFrom:
                 configMapKeyRef:
-                  key: websocket-host-ip
-                  name: {{ include "jarvis-sma-planner.fullname" . }}
-            - name: WEBSOCKET_HOST_PORT
+                  key: modbus-host-ip
+                  name: {{ include "jarvis-modbus-exporter.fullname" . }}
+            - name: MODBUS_HOST_PORT
               valueFrom:
                 configMapKeyRef:
-                  key: websocket-host-port
-                  name: {{ include "jarvis-sma-planner.fullname" . }}
-            - name: WEBSOCKET_LOGIN_CODE
+                  key: modbus-host-port
+                  name: {{ include "jarvis-modbus-exporter.fullname" . }}
+            - name: MODBUS_UNIT_ID
               valueFrom:
                 configMapKeyRef:
-                  key: websocket-login-code
-                  name: {{ include "jarvis-sma-planner.fullname" . }}
+                  key: modbus-unit-id
+                  name: {{ include "jarvis-modbus-exporter.fullname" . }}
             - name: STATE_FILE_CONFIG_MAP_NAME
               value: {{ include "jarvis-sma-planner.fullname" . }}
             resources:
