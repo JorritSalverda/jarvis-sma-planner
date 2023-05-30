@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "jarvis-sma-planner.fullname" . }}
+  labels:
+    {{- include "jarvis-sma-planner.labels" . | nindent 4 }}
+data:
+  websocket-host-ip: {{ .Values.config.websocketHostIP | quote }}
+  websocket-host-port: {{ .Values.config.websocketHostPort | quote }}
+  websocket-login-code: {{ .Values.config.websocketLoginCode | quote }}

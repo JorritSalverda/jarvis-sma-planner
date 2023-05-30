@@ -1,0 +1,110 @@
+name: Build
+
+on: [push, pull_request]
+
+env:
+  CARGO_TERM_COLOR: always
+  IMAGE_NAME: jsalverda/jarvis-sma-planner
+  HELM_NAME: jarvis-sma-planner
+
+jobs:
+  gitversion:
+    runs-on: ubuntu-latest
+    outputs:
+      semVer: ${{ steps.gitversion.outputs.semVer }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: gittools/actions/gitversion/setup@v0.9.7
+        with:
+          versionSpec: '5.x'
+      - id: gitversion
+        uses: gittools/actions/gitversion/execute@v0.9.7
+
+  docker:
+    runs-on: ubuntu-latest
+    # needs: [gitversion,vendor_sources]
+    needs: gitversion
+    env:
+      GITVERSION_SEMVER: ${{ needs.gitversion.outputs.semVer }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+      - run: sudo apt-get update && sudo apt-get install -y libudev-dev
+      - run: rustup component add clippy
+      - run: cargo clippy --no-deps -- --deny "warnings"
+      - run: cargo test
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ needs.gitversion.outputs.semVer }}
+      - uses: docker/setup-qemu-action@v2
+      - uses: docker/setup-buildx-action@v2
+      - uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: docker/build-push-action@v4
+        id: build
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.IMAGE_NAME }}-build-cache
+          cache-to: type=registry,ref=${{ env.IMAGE_NAME }}-build-cache,mode=max
+
+  helm:
+    runs-on: ubuntu-latest
+    needs: [gitversion,docker]
+    env:
+      GITVERSION_SEMVER: ${{ needs.gitversion.outputs.semVer }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: azure/setup-helm@v3
+        with:
+          version: v3.10.1
+      - run: helm lint --with-subcharts helm/${{ env.HELM_NAME }}
+      - run: helm package --app-version $GITVERSION_SEMVER --version $GITVERSION_SEMVER --dependency-update helm/${{ env.HELM_NAME }}
+      - uses: actions/checkout@v2
+        with:
+          repository: JorritSalverda/helm-charts
+          ref: master
+          path: helm-charts
+          token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+      - run: |
+          mkdir -p helm-charts/charts
+          cp ${{ env.HELM_NAME }}-${GITVERSION_SEMVER}.tgz helm-charts/charts
+          cd helm-charts
+          helm repo index --url https://helm.jorritsalverda.com/ .
+          git config user.email 'bot@estafette.io'
+          git config user.name 'estafette-bot'
+          git add --all
+          git commit --allow-empty -m "${{ env.HELM_NAME }} $GITVERSION_SEMVER"
+          git push origin master
+
+  tag:
+    runs-on: ubuntu-latest
+    needs: [gitversion,docker,helm]
+    env:
+      GITVERSION_SEMVER: ${{ needs.gitversion.outputs.semVer }}
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          git tag -f $GITVERSION_SEMVER
+          git push origin $GITVERSION_SEMVER
